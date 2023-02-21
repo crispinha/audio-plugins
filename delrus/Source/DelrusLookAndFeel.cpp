@@ -14,8 +14,8 @@ DelrusLookAndFeel::DelrusLookAndFeel() {
     setColour(juce::ResizableWindow::backgroundColourId, juce::Colour{140, 12, 97});
     setColour(juce::Slider::backgroundColourId, juce::Colour{89, 8, 62});
     setColour(juce::Slider::thumbColourId, juce::Colour{106, 213, 217});
-    setDefaultSansSerifTypefaceName("Courier");
-    LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypefaceName("Courier");
+    setDefaultSansSerifTypefaceName("Courier New");
+    LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypefaceName("Courier New");
 }
 
 // modified from tutorial
