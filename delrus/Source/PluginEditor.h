@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include "CustomKnob.h"
+#include "cui/cui.h"
 #include "DelrusLookAndFeel.h"
 
 
@@ -43,9 +43,9 @@ private:
         juce::Label l {"", "Delay"};
         juce::Font l_font {base_font_size};
         
-        CustomKnob knob_d_feedback;
-        CustomKnob knob_d_time;
-        CustomKnob knob_d_drywet;
+        cui::CustomKnob knob_d_feedback;
+        cui::CustomKnob knob_d_time;
+        cui::CustomKnob knob_d_drywet;
         
         void setup(juce::AudioProcessorValueTreeState& plug_params);
         void paint(juce::Graphics& g) override;
@@ -56,12 +56,12 @@ private:
         const float base_font_size = 40;
         juce::Label l {"", "Cho\nrus"};
         juce::Font l_font {base_font_size};
-        
-        CustomKnob knob_c_rate;
-        CustomKnob knob_c_depth;
-        CustomKnob knob_c_centredelay;
-        CustomKnob knob_c_feedback;
-        CustomKnob knob_c_drywet;
+
+        cui::CustomKnob knob_c_rate;
+        cui::CustomKnob knob_c_depth;
+        cui::CustomKnob knob_c_centredelay;
+        cui::CustomKnob knob_c_feedback;
+        cui::CustomKnob knob_c_drywet;
         
         void setup(juce::AudioProcessorValueTreeState& plug_params);
         void paint(juce::Graphics& g) override;

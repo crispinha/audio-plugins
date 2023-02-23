@@ -11,10 +11,12 @@
 #pragma once
 #include <JuceHeader.h>
 
-class DelrusLookAndFeel : public juce::LookAndFeel_V4 {
-public:
-    DelrusLookAndFeel();
-    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
-                           const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider&) override;
-    juce::Label* createSliderTextBox(juce::Slider& slider) override;
+class DelrusLookAndFeel : public cui::BaseLookAndFeel {
+ public:
+    DelrusLookAndFeel() {
+        setColour(juce::ResizableWindow::backgroundColourId, juce::Colour{140, 12, 97});
+        setColour(juce::Label::textColourId , juce::Colour{255, 255, 255});
+        setColour(juce::Slider::backgroundColourId, juce::Colour{89, 8, 62});
+        setColour(juce::Slider::thumbColourId, juce::Colour{106, 213, 217});
+    }
 };

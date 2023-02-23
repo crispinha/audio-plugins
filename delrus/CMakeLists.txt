@@ -23,15 +23,20 @@ juce_add_plugin(Delrus
 
 juce_generate_juce_header(Delrus)
 
+
+#add_subdirectory(../common Builds)
+
+juce_add_module(../cui)
+target_link_libraries(Delrus PUBLIC cui)
+
 juce_add_module(modules/melatonin_inspector)
-target_link_libraries(Delrus PRIVATE melatonin_inspector)
+target_link_libraries(Delrus PUBLIC melatonin_inspector)
 
 target_sources(Delrus
     PRIVATE
         Source/PluginEditor.cpp
         Source/PluginProcessor.cpp
-        Source/CustomKnob.cpp
-        Source/DelrusLookAndFeel.cpp)
+        )
 
 
 target_compile_definitions(Delrus
