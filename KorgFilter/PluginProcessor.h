@@ -1,10 +1,24 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <cdsp/filters.hpp>
+
+inline juce::NormalisableRange<float> normRangeWithCentreSkew(float lo, float hi, float centre) {
+    auto range = juce::NormalisableRange<float>(lo, hi);
+    range.setSkewForCentre(centre);
+    return range;
+}
 
 //==============================================================================
-class AudioPluginAudioProcessor  : public juce::AudioProcessor
+class AudioPluginAudioProcessor  : public juce::AudioProcessor, public juce::ValueTree::Listener
 {
+    juce::AudioProcessorValueTreeState params;
+    std::atomic<float>* param_cutoff;
+
+    std::atomic<bool> tree_changed {true};
+
+    cdsp::appnotes::OnePoleFilter f;
+
 public:
     //==============================================================================
     AudioPluginAudioProcessor();
@@ -39,6 +53,8 @@ public:
     void changeProgramName (int index, const juce::String& newName) override;
 
     //==============================================================================
+    void valueTreePropertyChanged(juce::ValueTree &treeWhosePropertyHasChanged, const juce::Identifier &property) override;
+
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 

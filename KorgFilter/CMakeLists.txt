@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 
 project(KorgFilter VERSION 0.0.1)
 
-add_subdirectory(../JUCE build)
-add_subdirectory(../cdsp Builds)
-
+add_subdirectory(../JUCE juce-build)
+add_subdirectory(../cdsp cdsp-build)
 
 juce_add_plugin(KorgFilter
     # VERSION ...                               # Set this if the plugin version is different to the project version
@@ -31,6 +30,8 @@ target_sources(KorgFilter
         PluginEditor.cpp
         PluginProcessor.cpp)
 
+target_compile_features(KorgFilter PRIVATE cxx_std_20)
+
 target_compile_definitions(KorgFilter
     PUBLIC
         # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
@@ -44,6 +45,7 @@ target_link_libraries(KorgFilter
     PRIVATE
         # AudioPluginData           # If we'd created a binary data target, we'd link to it here
         juce::juce_audio_utils
+        cdsp
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
