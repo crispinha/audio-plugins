@@ -14,10 +14,12 @@ class AudioPluginAudioProcessor  : public juce::AudioProcessor, public juce::Val
 {
     juce::AudioProcessorValueTreeState params;
     std::atomic<float>* param_cutoff;
+    std::atomic<float>* param_q;
+    std::atomic<float>* param_sat;
 
     std::atomic<bool> tree_changed {true};
 
-    cdsp::appnotes::OnePoleFilter f;
+    cdsp::appnotes::ThirtyFiveLPF f;
 
 public:
     //==============================================================================

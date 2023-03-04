@@ -15,11 +15,17 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                                juce::Identifier("KorgFilter"),
                                {
                                        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("cutoff"), "Filter cutoff",
-                                                                                   normRangeWithCentreSkew(20, 20'000, 440), 200)
+                                                                                   normRangeWithCentreSkew(20, 20'000, 440), 200),
+                                       std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("q"), "Filter Q",
+                                                                                   0.001, 3, 0.5),
+                                       std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("sat"), "Filter Saturation",
+                                                                                   1, 2, 1.5),
                                })
 {
     // normRangeWithCentreSkew(20, 20'000, 440), 200
     param_cutoff = params.getRawParameterValue("cutoff");
+    param_q = params.getRawParameterValue("q");
+    param_sat = params.getRawParameterValue("sat");
     params.state.addListener(this);
 }
 
@@ -138,7 +144,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::ScopedNoDenormals noDenormals;
 
     if (tree_changed.load()) {
-        f.set_cutoff(param_cutoff->load(), static_cast<float>(getSampleRate()));
+        f.set_params(param_cutoff->load(), param_q->load(), param_sat->load(), static_cast<float>(getSampleRate()));
         tree_changed.store(false);
     }
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -152,7 +158,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     {
         auto* channelData = buffer.getWritePointer (channel);
         for (int i = 0; i < buffer.getNumSamples(); i++) {
-            channelData[i] = f.lpf(channelData[i], channel);
+            channelData[i] = f.process(channelData[i], channel);
 //            channelData[i] = channelData[i];
         }
     }
