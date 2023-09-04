@@ -159,7 +159,6 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto* channelData = buffer.getWritePointer (channel);
         for (int i = 0; i < buffer.getNumSamples(); i++) {
             channelData[i] = f.process(channelData[i], channel);
-//            channelData[i] = channelData[i];
         }
     }
 }

@@ -25,19 +25,24 @@
 class DelrusAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
+    // value tree is passed to sub-panels and they pass it to components to attach to knobs
     DelrusAudioProcessorEditor (DelrusAudioProcessor&, juce::AudioProcessorValueTreeState&);
     ~DelrusAudioProcessorEditor() override;
 
     //==============================================================================
     void paint (juce::Graphics&) override;
+    // flexbox-based layout
     void resized() override;
     
 private:
-    juce::ComponentBoundsConstrainer constraints;
-    DelrusAudioProcessor& audioProcessor;
-    juce::AudioProcessorValueTreeState& plug_params;
+    // take a nested/tree approach - the Edior has two panels, which have individual controls and labels
+
+    juce::ComponentBoundsConstrainer resize_constraints;
     DelrusLookAndFeel look_and_feel;
-    
+
+    DelrusAudioProcessor& audioProcessor;
+
+    // left-hand "Delay" params
     struct DelayPanel : public juce::Component {
         const float base_font_size = 132;
         juce::Label l {"", "Delay"};
@@ -51,7 +56,8 @@ private:
         void paint(juce::Graphics& g) override;
         void resized() override;
     };
-    
+
+    // right hand "Chorus" params
     struct ChorusPanel : public juce::Component {
         const float base_font_size = 40;
         juce::Label l {"", "Cho\nrus"};
@@ -73,7 +79,7 @@ private:
     
 #ifdef INSP
     melatonin::Inspector inspector { *this };
-    juce::TextButton btn {"Debug"};
+    juce::TextButton debug_button {"Debug"};
 #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelrusAudioProcessorEditor)

@@ -1,5 +1,7 @@
 #include "cui.h"
 
+#include <memory>
+
 namespace cui {
     void CustomKnob::setup(juce::AudioProcessorValueTreeState& plug_params, const juce::String& param_id, bool skew,
                            double skew_midpoint) {
@@ -10,7 +12,7 @@ namespace cui {
         if (skew) {
             knob.setSkewFactorFromMidPoint(skew_midpoint);
         }
-        attachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(plug_params, param_id, knob));
+        attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(plug_params, param_id, knob);
         label.setText(param->getName(30), juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
         addAndMakeVisible(label);
@@ -28,12 +30,13 @@ namespace cui {
         fb.justifyContent = juce::FlexBox::JustifyContent::center;
         fb.alignContent = juce::FlexBox::AlignContent::center;
 
-        auto width = (120.f / 700.f) * getTopLevelComponent()->getWidth();
-        auto text_height = (20.f / 700.f) * getTopLevelComponent()->getWidth();
-        auto font_height = (14.f / 700.f) * getTopLevelComponent()->getWidth();
+        auto width = (120.f / 700.f) * static_cast<float>(getTopLevelComponent()->getWidth());
+        auto text_height = (20.f / 700.f) * static_cast<float>(getTopLevelComponent()->getWidth());
+        auto font_height = (14.f / 700.f) * static_cast<float>(getTopLevelComponent()->getWidth());
 
-        knob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, width / 3, text_height);
-        // assuming font creation is spenny and font setting is cheap
+        knob.setTextBoxStyle(juce::Slider::TextBoxBelow, false,
+                             static_cast<int>(width / 3), static_cast<int>(text_height));
+        // resize font based on size in document, assuming font creation is expensive and font setting is cheap
         label_font.setHeight(font_height);
         label.setFont(label_font);
 
@@ -41,7 +44,6 @@ namespace cui {
         fb.items.add(juce::FlexItem(knob).withHeight(width).withMaxWidth(width));
 
         fb.performLayout(getLocalBounds());
-
     }
 
     BaseLookAndFeel::BaseLookAndFeel() {
@@ -53,26 +55,28 @@ namespace cui {
 	    LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypefaceName("Courier New");
 	}
 
-	// modified from tutorial
+	// code derived from https://docs.juce.com/master/tutorial_look_and_feel_customisation.html
 	void BaseLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
 	                                          const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider&) {
 	    g.saveState();
 	    
-	    auto radius = (float) juce::jmin(width / 2.f, height / 2.f) - 4.f;
+	    auto radius = (float) juce::jmin(static_cast<float>(width) / 2.f, static_cast<float>(height) / 2.f) - 4.f;
 	    auto centre_x = (float) x + (float) width * 0.5f;
 	    auto centre_y = (float) y + (float) height * 0.5f;
 	    auto rx = centre_x - radius;
 	    auto ry = centre_y - radius;
-	    auto rw = radius * 2.f;
+	    auto diameter = radius * 2.f;
 	    auto angle =  rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-	    
+
+        // draw knob base
 	    g.setColour(findColour(juce::Slider::backgroundColourId));
-	    g.fillEllipse(rx, ry, rw, rw);
-	        
+	    g.fillEllipse(rx, ry, diameter, diameter);
+
+        // draw pointer
 	    juce::Path p;
 	    auto pointer_len = radius * 1.1f;
-	    auto pointer_thicc = radius * 0.1f;
-	    p.addRoundedRectangle(-pointer_thicc * 0.5f, -radius - (radius / 10.f), pointer_thicc, pointer_len, radius / 30.f);
+	    auto pointer_width = radius * 0.1f;
+	    p.addRoundedRectangle(-pointer_width * 0.5f, -radius - (radius / 10.f), pointer_width, pointer_len, radius / 30.f);
 	    p.applyTransform(juce::AffineTransform::rotation(angle).translated(centre_x, centre_y));
 	    g.setColour(findColour(juce::Slider::thumbColourId));
 	    g.fillPath(p);

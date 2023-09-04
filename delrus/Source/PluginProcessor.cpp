@@ -25,18 +25,18 @@ DelrusAudioProcessor::DelrusAudioProcessor()
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("d_feedback"), "Delay Feedback",
                                                                         0.f, 1.f, 0.5f),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("d_time"), "Delay Time",
-                                                                        normRangeWithCentreSkew(0.01f, max_delay_in_s, max_delay_in_s/4.f), 1.f,
-                                                                        attrWithStringFunction(2, "s")),
+                                                                    normRangeWithCentreSkew(0.01f, max_delay_in_s, max_delay_in_s/4.f), 1.f,
+                                                                    attrWithStringSuffix(2, "s")),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("d_drywet"), "Dry/Wet",
                                                                         0.f, 1.f, 0.5f),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("c_rate"), "Chorus Rate",
-                                                                        normRangeWithCentreSkew(0.f, 99.999f, 20.f), 1.f,
-                                                                        attrWithStringFunction(1, "hz")),
+                                                                    normRangeWithCentreSkew(0.f, 99.999f, 20.f), 1.f,
+                                                                    attrWithStringSuffix(1, "hz")),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("c_depth"), "Chorus Depth",
                                                                         0.f, 1.f, 0.25f),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("c_centredelay"), "Centre Delay",
-                                                                        normRangeWithCentreSkew(0.f, 99.999f, 20.f), 7.f,
-                                                                        attrWithStringFunction(1, "ms")),
+                                                                    normRangeWithCentreSkew(0.f, 99.999f, 20.f), 7.f,
+                                                                    attrWithStringSuffix(1, "ms")),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("c_feedback"), "Chorus Feedback",
                                                                         -1.f, 1.f, 0.f),
                         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("c_drywet"), "Chorus Dry/Wet",
@@ -123,31 +123,30 @@ void DelrusAudioProcessor::changeProgramName (int index, const juce::String& new
 //==============================================================================
 void DelrusAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    // prepares everything for the right sample rate etc
     
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     const auto numChannels = juce::jmax (totalNumInputChannels, totalNumOutputChannels);
     
     juce::dsp::ProcessSpec spec = {sampleRate, (juce::uint32) samplesPerBlock, (juce::uint32) numChannels};
-    del.prepare(spec);
+    delay.prepare(spec);
     chorus.prepare(spec);
     
     time_smoother.reset(sampleRate, 0.01);
-    del.setMaximumDelayInSamples(sampleRate * max_delay_in_s);
+    delay.setMaximumDelayInSamples(sampleRate * max_delay_in_s);
     storedSampleRate = sampleRate;
     
-    buf_from_delay.setSize(numChannels, samplesPerBlock);
+    delay_out_buffer.setSize(numChannels, samplesPerBlock);
     
-    drywetmix.prepare(spec);
-    drywetmix.setWetLatency(0);
+    drywet_mixer.prepare(spec);
+    drywet_mixer.setWetLatency(0);
 }
 
 void DelrusAudioProcessor::reset() {
-    del.reset();
+    delay.reset();
     chorus.reset();
-    drywetmix.reset();
+    drywet_mixer.reset();
 }
 
 void DelrusAudioProcessor::valueTreePropertyChanged(juce::ValueTree &treeWhosePropertyHasChanged, const juce::Identifier &property) {
@@ -198,48 +197,52 @@ void DelrusAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         
     }
     
-    // needs to be called every block
+    // chorus parameters need to be set every block
     chorus.setRate(*param_c_rate);
     chorus.setDepth(*param_c_depth);
     chorus.setCentreDelay(*param_c_centredelay);
     chorus.setFeedback(*param_c_feedback);
     chorus.setMix(*param_c_drywet);
     
-    float fbdbck = *param_d_feedback;
-    float deltime = *param_d_time;
-    if (deltime != last_time) {
-        last_time = deltime;
-        time_smoother.setTargetValue(deltime);
+    float feedback_amount = *param_d_feedback;
+    float delay_time = *param_d_time;
+    if (delay_time != last_time) {
+        last_time = delay_time;
+        time_smoother.setTargetValue(delay_time);
     }
-    float dywt = *param_d_drywet;
+    float drywet_amount = *param_d_drywet;
     
-    drywetmix.pushDrySamples(buffer);
-    drywetmix.setWetMixProportion(dywt);
-    
-    for (int channel = 0; channel < numChannels; ++channel) {
-        auto chan_from_delay = buf_from_delay.getWritePointer(channel);
+    drywet_mixer.pushDrySamples(buffer);
+    drywet_mixer.setWetMixProportion(drywet_amount);
 
-        for (int s = 0; s < buf_from_delay.getNumSamples(); s++) {
-            chan_from_delay[s] = del.popSample(channel, storedSampleRate * time_smoother.getNextValue(), true);
+    // read a block's worth of samples from delay line into temp buffer
+    for (int channel = 0; channel < numChannels; ++channel) {
+        auto delay_out_channel = delay_out_buffer.getWritePointer(channel);
+
+        for (int s = 0; s < delay_out_buffer.getNumSamples(); s++) {
+            delay_out_channel[s] = delay.popSample(channel, storedSampleRate * time_smoother.getNextValue(), true);
         }
     }
-    
-    auto chorus_block = juce::dsp::AudioBlock<float> {buf_from_delay};
+
+    // process delay out thru chorus, placing back into delay output buffer
+    auto chorus_block = juce::dsp::AudioBlock<float> {delay_out_buffer};
     auto chorus_ctx = juce::dsp::ProcessContextReplacing<float> {chorus_block};
     chorus.process(chorus_ctx);
-    
+
+    // mix delay out into input buffer, push that into delay line
     for (int channel = 0; channel < numChannels; ++channel) {
         auto* channelData = buffer.getReadPointer (channel);
         
-        buffer.addFrom(channel, 0, buf_from_delay, channel, 0, buffer.getNumSamples(), fbdbck);
+        buffer.addFrom(channel, 0, delay_out_buffer, channel, 0, buffer.getNumSamples(), feedback_amount);
         
         for (int s = 0; s < buffer.getNumSamples(); s++) {
-            del.pushSample(channel, channelData[s]);
+            delay.pushSample(channel, channelData[s]);
         }
     }
-    
-    drywetmix.mixWetSamples(buf_from_delay);
-    buffer = buf_from_delay;
+
+    // final dry/wet mix and output
+    drywet_mixer.mixWetSamples(delay_out_buffer);
+    buffer = delay_out_buffer;
 }
 
 //==============================================================================

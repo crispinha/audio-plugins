@@ -12,8 +12,8 @@
 const int base_w = 700, base_h = 400;
 
 //==============================================================================
-DelrusAudioProcessorEditor::DelrusAudioProcessorEditor (DelrusAudioProcessor& p, juce::AudioProcessorValueTreeState& pts)
-    : AudioProcessorEditor (&p), audioProcessor (p), plug_params(pts)
+DelrusAudioProcessorEditor::DelrusAudioProcessorEditor (DelrusAudioProcessor& p, juce::AudioProcessorValueTreeState& plug_params)
+    : AudioProcessorEditor (&p), audioProcessor (p)
 {
     setName("DelrusAudioProcessorEditor");
     setLookAndFeel(&look_and_feel);
@@ -25,14 +25,14 @@ DelrusAudioProcessorEditor::DelrusAudioProcessorEditor (DelrusAudioProcessor& p,
     addAndMakeVisible(chorus_panel);
     
     setResizable(true, true);
-    constraints.setFixedAspectRatio(((double) base_w)/((double) base_h));
-    constraints.setMinimumSize(base_w * (9.1f/10.f), base_h * (9.1f/10.f));
-    setConstrainer(&constraints);
+    resize_constraints.setFixedAspectRatio(((double) base_w) / ((double) base_h));
+    resize_constraints.setMinimumSize(base_w * (9.1f / 10.f), base_h * (9.1f / 10.f));
+    setConstrainer(&resize_constraints);
     setSize (base_w, base_h);
 
 #ifdef INSP
     addAndMakeVisible(btn);
-    btn.onClick = [this]{
+    debug_button.onClick = [this]{
         inspector.setVisible(true);
     };
 #endif
@@ -66,11 +66,9 @@ void DelrusAudioProcessorEditor::resized()
     fb.performLayout(getLocalBounds().toFloat());
     
 #ifdef INSP
-    btn.setBounds(20, 20, 50, 20);
+    debug_button.setBounds(20, 20, 50, 20);
 #endif
 }
-
-#define GRIDITEM(inner) (juce::GridItem((inner)))
 
 void DelrusAudioProcessorEditor::DelayPanel::setup(juce::AudioProcessorValueTreeState& plug_params) {
     setName("DelayPanel");
@@ -106,7 +104,7 @@ void DelrusAudioProcessorEditor::DelayPanel::resized() {
     
     del_grid.items = {
         juce::GridItem(l).withColumn({1, 4}),
-        GRIDITEM(knob_d_feedback), GRIDITEM(knob_d_time), GRIDITEM(knob_d_drywet)
+        juce::GridItem(knob_d_feedback), juce::GridItem(knob_d_time), juce::GridItem(knob_d_drywet)
     };
     
     del_grid.performLayout(getLocalBounds());
@@ -148,8 +146,8 @@ void DelrusAudioProcessorEditor::ChorusPanel::resized() {
     chorus_grid.templateRows = { Track (Fr (1)), Track (Fr (1))};
     chorus_grid.templateColumns = { Track (Fr (1)), Track (Fr (1)), Track (Fr (1)) };
     chorus_grid.items = {
-        GRIDITEM(l),                        GRIDITEM(knob_c_rate),       GRIDITEM(knob_c_depth),
-        GRIDITEM(knob_c_centredelay),       GRIDITEM(knob_c_feedback),   GRIDITEM(knob_c_drywet)
+        juce::GridItem(l),                    juce::GridItem(knob_c_rate),       juce::GridItem(knob_c_depth),
+        juce::GridItem(knob_c_centredelay),   juce::GridItem(knob_c_feedback),   juce::GridItem(knob_c_drywet)
     };
     chorus_grid.performLayout(getLocalBounds());
 }

@@ -15,11 +15,6 @@ namespace cdsp::appnotes {
         double c = a + b;
         delay[channel] = c;
         return b;
-
-//        float v = (samp - de)*g;
-//        float LP = v +de;
-//        delay[channel] = LP + v;
-//        return LP;
     }
 
     double OnePoleFilter::hpf(double samp, int channel) {
@@ -27,7 +22,7 @@ namespace cdsp::appnotes {
     }
 
     void OnePoleFilter::set_cutoff(double fc, double sample_rate) {
-        // magic from the article
+        // equations from the appnote
         double wd = 2.f * std::numbers::pi_v<float> * fc;
         double T = 1.f / sample_rate;
         double wa = (2.f/T) * std::tan(wd * T / 2);

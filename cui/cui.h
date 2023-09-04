@@ -9,14 +9,12 @@ version:	0.1.0
 END_JUCE_MODULE_DECLARATION
 */
 
-//#include <JuceHeader.h>
-//#include "cui/CustomKnob.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
-
 namespace cui {
 
+    // Component that contains a label and slider so they can be laid out as a single item and automatically attaches to a value tree parameter
     class CustomKnob : public juce::Component {
      public:
         juce::Slider knob;
@@ -33,11 +31,13 @@ namespace cui {
         void resized() override;
     };
 
+    // Look and feel that sets fonts/colours/label size and custom slider design to "house style",
+    // can be subclassed per-plugin
 	class BaseLookAndFeel : public juce::LookAndFeel_V4 {
 	public:
         BaseLookAndFeel();
 	    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
-	                           const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider&) override;
+	                           float rotaryStartAngle, float rotaryEndAngle, juce::Slider&) override;
 	    juce::Label* createSliderTextBox(juce::Slider& slider) override;
 	};
 

@@ -13,13 +13,15 @@
 //==============================================================================
 /**
 */
+// Creates a NormalisableRange with centre skew with a single function call
 inline juce::NormalisableRange<float> normRangeWithCentreSkew(float lo, float hi, float centre) {
     auto range = juce::NormalisableRange<float>(lo, hi);
     range.setSkewForCentre(centre);
     return range;
 }
 
-inline juce::AudioParameterFloatAttributes attrWithStringFunction(int baseMaxChars, std::string suffix) {
+// Creates float attribute that adds string suffix, for adding units for display, eg. "130ms", "440hz"
+inline juce::AudioParameterFloatAttributes attrWithStringSuffix(int baseMaxChars, std::string suffix) {
     return juce::AudioParameterFloatAttributes()
         .withStringFromValueFunction([=] (auto x, auto) {
             auto s = juce::String (x, baseMaxChars);
@@ -50,12 +52,13 @@ public:
     std::atomic<float>* param_c_feedback;
     std::atomic<float>* param_c_drywet;
     
-    juce::dsp::DelayLine<float> del{};
+    juce::dsp::DelayLine<float> delay{};
     double storedSampleRate = 0;
     juce::dsp::Chorus<float> chorus{};
     
-    juce::dsp::DryWetMixer<float> drywetmix {10};
-    juce::AudioBuffer<float> buf_from_delay;
+    juce::dsp::DryWetMixer<float> drywet_mixer {10};
+    // takes the output from the delay line, for chorus/output
+    juce::AudioBuffer<float> delay_out_buffer;
     
     std::atomic<bool> tree_changed {true};
     
